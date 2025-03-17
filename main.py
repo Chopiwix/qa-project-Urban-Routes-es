@@ -154,7 +154,7 @@ class UrbanRoutesPage:
         # 7Esperar a que el botón de cierre sea interactuable
         close_button = WebDriverWait(self.driver, 10).until(
         EC.presence_of_element_located(self.close_sms_modal)
-    )
+        )
 
         # 8 Forzar el clic con JS ya que puede haber nuevamente errores con elementos superpuestos
         self.driver.execute_script("arguments[0].click();", close_button)
@@ -174,65 +174,59 @@ class UrbanRoutesPage:
             EC.element_to_be_clickable(self.add_card_button)
         ).click()
 
-
-    def add_credit_card(self, card_number, cvv):
-        """Ingresa los datos de la tarjeta de crédito y confirma la tarjeta."""
-
-        # 1 Esperar hasta que el campo de número de tarjeta sea visible e interactuable
+    def input_card_number(self, card_number):
+        """Escribe el número de tarjeta en el campo correspondiente."""
         card_input = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located(self.card_number_field)
         )
-        
-        # 2 Limpia y escribe el número de tarjeta
         card_input.clear()
         card_input.send_keys(card_number)
-        print(f"✅ Número de tarjeta enviado: {card_number}")
-        time.sleep(1)
+        print(f"Número de tarjeta enviado: {card_number}")
 
-        # 4 Asegurar que el campo CVV esté accesible
+        # Verificar que el valor se ingresó correctamente
+        WebDriverWait(self.driver, 5).until(
+            lambda d: card_input.get_attribute("value") == card_number
+        )
+
+    def input_cvv(self, cvv):
+        """Escribe el código CVV en el campo correspondiente y cambia el enfoque."""
         cvv_input = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located(self.cvv_field)
         )
-        print("✅ Campo CVV encontrado")
+        print("Campo CVV encontrado")
 
-        # 5 Intentar hacer clic en el campo CVV
-        try:
-            cvv_input.click()
-            print("✅ Clic en CVV realizado")
-        except:
-            self.driver.execute_script("arguments[0].click();", cvv_input)
-            print("✅ Clic en CVV realizado con JavaScript.")
+        # Hacer clic en el campo CVV para activarlo
+        cvv_input.click()
+        print("Clic en CVV realizado")
 
-        time.sleep(1)  # Espera para asegurar que el campo está activado
+        # Ingresar el código CVV
+        cvv_input.clear()
+        cvv_input.send_keys(cvv)
+        print(f"CVV escrito: {cvv}")
 
-        # 6 Intentar escribir el CVV manualmente
-        try:
-            cvv_input.clear()
-            cvv_input.send_keys(cvv)
-            print(f"✅ CVV escrito: {cvv}")
-        except:
-            self.driver.execute_script("arguments[0].value = arguments[1];", cvv_input, cvv)
-            print(f"✅ CVV escrito con JavaScript: {cvv}")
-
-        # 7 Simular cambiar y activar el botón "Agregar"
-        cvv_input.send_keys(Keys.TAB)  # Mueve el foco al siguiente campo
+        # Cambiar el enfoque presionando TAB
+        cvv_input.send_keys(Keys.TAB)
         time.sleep(1)
         self.driver.execute_script("arguments[0].blur();", cvv_input)  # Simular pérdida de foco
-        print("✅ Simulación de TAB y pérdida de foco realizada")
+        print("Simulación de TAB y pérdida de foco realizada")
 
-        # 8 Esperar a que el botón "Agregar" se active
+    def confirm_card(self):
+        """Confirma la tarjeta presionando el botón 'Agregar'."""
         add_button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(self.confirm_card_button)
         )
-        print("✅ Botón 'Agregar' activado.")
+        print("Botón 'Agregar' activado.")
 
-        # 9 Hacer clic en "Agregar" y ser feliz
-        try:
-            add_button.click()
-            print("✅ Tarjeta agregada correctamente")
-        except:
-            self.driver.execute_script("arguments[0].click();", add_button)
-            print("✅ Clic en botón 'Agregar' realizado con JavaScript") #Usé JS por que llevo demasiados intentos sin éxito, como se usar un poco js pense en implementarlo pero sigo fallando
+        # Hacer clic en "Agregar"
+        add_button.click()
+        print("Tarjeta agregada correctamente")
+
+    def add_credit_card(self, card_number, cvv):
+        """Función principal que llama a los métodos en orden."""
+        self.input_card_number(card_number)
+        self.input_cvv(cvv)
+        self.confirm_card()
+
 
 class TestUrbanRoutes:
 
