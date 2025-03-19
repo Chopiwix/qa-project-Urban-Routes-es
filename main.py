@@ -66,7 +66,7 @@ class UrbanRoutesPage:
 
     # 4.3 Agregar una tarjeta de crédito
     card_number_field = (By.ID, "number")  # Campo Número de Tarjeta
-    cvv_field = (By.ID, "code")  # Campo CVV # Campo CVV
+    cvv_field = (By.NAME, "code")  # Campo CVV # Campo CVV
     confirm_card_button = (By.XPATH, "//button[@type='submit' and text()='Agregar']") #Botón de confirmación en la tarjeta de crédito
 
 
@@ -174,59 +174,34 @@ class UrbanRoutesPage:
             EC.element_to_be_clickable(self.add_card_button)
         ).click()
 
-    def input_card_number(self, card_number):
-        """Escribe el número de tarjeta en el campo correspondiente."""
-        card_input = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located(self.card_number_field)
-        )
-        card_input.clear()
-        card_input.send_keys(card_number)
+    def click_card(self, card_number):
+        """Hace clic en el campo de número de tarjeta y escribe el número."""
+        self.driver.implicitly_wait(30)
+        # Desempaquetar la tupla con *
+        card_element = self.driver.find_element(*self.card_number_field)
+        card_element.click()
+        card_element.send_keys(card_number)
         print(f"Número de tarjeta enviado: {card_number}")
 
-        # Verificar que el valor se ingresó correctamente
-        WebDriverWait(self.driver, 5).until(
-            lambda d: card_input.get_attribute("value") == card_number
-        )
 
-    def input_cvv(self, cvv):
-        """Escribe el código CVV en el campo correspondiente y cambia el enfoque."""
-        cvv_input = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located(self.cvv_field)
-        )
-        print("Campo CVV encontrado")
-
-        # Hacer clic en el campo CVV para activarlo
-        cvv_input.click()
-        print("Clic en CVV realizado")
-
-        # Ingresar el código CVV
-        cvv_input.clear()
-        cvv_input.send_keys(cvv)
+    def add_code_card(self, cvv):
+        """Hace clic en el campo CVV y escribe el código, luego presiona TAB."""
+        self.driver.implicitly_wait(10)
+        # Desempaquetar la tupla con *
+        cvv_element = self.driver.find_element(*self.cvv_field)
+        cvv_element.click()
+        cvv_element.send_keys(cvv + Keys.TAB)
         print(f"CVV escrito: {cvv}")
+        time.sleep(5)
 
-        # Cambiar el enfoque presionando TAB
-        cvv_input.send_keys(Keys.TAB)
-        time.sleep(1)
-        self.driver.execute_script("arguments[0].blur();", cvv_input)  # Simular pérdida de foco
-        print("Simulación de TAB y pérdida de foco realizada")
-
-    def confirm_card(self):
-        """Confirma la tarjeta presionando el botón 'Agregar'."""
-        add_button = WebDriverWait(self.driver, 10).until(
-            EC.element_to_be_clickable(self.confirm_card_button)
-        )
-        print("Botón 'Agregar' activado.")
-
-        # Hacer clic en "Agregar"
+    def card_submit_button(self):
+        """Hace clic en el botón 'Agregar' para confirmar la tarjeta."""
+        self.driver.implicitly_wait(30)
+        # Desempaquetar la tupla con *
+        add_button = self.driver.find_element(*self.confirm_card_button)
         add_button.click()
         print("Tarjeta agregada correctamente")
-
-    def add_credit_card(self, card_number, cvv):
-        """Función principal que llama a los métodos en orden."""
-        self.input_card_number(card_number)
-        self.input_cvv(cvv)
-        self.confirm_card()
-
+        time.sleep(5)
 
 class TestUrbanRoutes:
 
@@ -278,12 +253,9 @@ class TestUrbanRoutes:
         card_number = data.card_number
         card_code = data.card_code
 
-        # Usar add_credit_card() en lugar de enter_card_number() y enter_card_cvv_and_confirm()
-        routes_page.add_credit_card(card_number, card_code)
-
-        print(f"DEBUG: Enviando tarjeta: {card_number}, CVV: {card_code}")
-
-        routes_page.add_credit_card(card_number, card_code)  # Llamar la función correcta
+        routes_page.click_card(card_number)
+        routes_page.add_code_card(card_code)
+        routes_page.card_submit_button()
 
     @classmethod
     def teardown_class(cls):
