@@ -175,16 +175,11 @@ class UrbanRoutesPage:
                 (By.XPATH, "//div[@class='buttons']/button[@type='submit' and text()='Confirmar']")
             )
         )
-
         # Asegurarse de que el botón sea visible en pantalla
         self.driver.execute_script("arguments[0].scrollIntoView(true);", sms_confirm_button)
-        
         # Intentar hacer clic con JavaScript
         self.driver.execute_script("arguments[0].click();", sms_confirm_button)
-        
-        # Confirmación de éxito
-        print("Botón de Confirmar presionado exitosamente.")
-
+    
         
     def open_payment_method(self):
         """Hace clic en 'Método de pago' antes de agregar una tarjeta."""
@@ -205,8 +200,6 @@ class UrbanRoutesPage:
         card_element = self.driver.find_element(*self.card_number_field)
         card_element.click()
         card_element.send_keys(card_number)
-        print(f"Número de tarjeta enviado: {card_number}")
-
 
     def add_code_card(self, cvv):
         """Hace clic en el campo CVV y escribe el código, luego presiona TAB."""
@@ -215,8 +208,6 @@ class UrbanRoutesPage:
         cvv_element = self.driver.find_element(*self.cvv_field)
         cvv_element.click()
         cvv_element.send_keys(cvv + Keys.TAB)
-        print(f"CVV escrito: {cvv}")
-        
 
     def card_submit_button(self):
         """Hace clic en el botón 'Agregar' para confirmar la tarjeta."""
@@ -225,18 +216,13 @@ class UrbanRoutesPage:
         add_button = self.driver.find_element(*self.confirm_card_button)
         add_button.click()
         
-        
-
     def close_card_modal(self):
         """Cierra el modal de la tarjeta de crédito dentro del contenedor de pago."""
-
         payment_picker = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'payment-picker open')]"))
         )
-
         # Buscar el botón de cierre dentro del contenedor activo
         close_button = payment_picker.find_element(By.XPATH, ".//button[contains(@class, 'close-button') and contains(@class, 'section-close')]")
-
         # Intentar hacer clic en el botón con JavaScript
         self.driver.execute_script("arguments[0].click();", close_button)
         time.sleep(1)
@@ -247,14 +233,25 @@ class UrbanRoutesPage:
         message_input = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//input[@id='comment' and @class='input']"))
         )
-
         # Forzar clic con JavaScript si el clic normal no funciona
         self.driver.execute_script("arguments[0].click();", message_input)
-
         # Ingresar el mensaje al conductor
         message_input.clear()
         message_input.send_keys(message)
-        time.sleep(4) 
+        
+
+    def activate_chekbox(self):
+        """Hace clic en el botón de Confirmar después de ingresar el código SMS."""
+        checkbox = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//div[@class='switch']/input[@type='checkbox' and @class='switch-input']")
+            )
+        )
+        # Asegurarse de que el botón sea visible en pantalla
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+        # Intentar hacer clic con JavaScript
+        self.driver.execute_script("arguments[0].click();", checkbox)
+        time.sleep(4)
 
 class TestUrbanRoutes:
 
@@ -319,6 +316,8 @@ class TestUrbanRoutes:
         routes_page.close_card_modal()
         # Escribe el mensaje al conductor
         routes_page.add_driver_message("Traiga un aperitivo, por favor")
+        # Activa checkbox
+        routes_page.activate_chekbox()
 
     @classmethod
     def teardown_class(cls):
