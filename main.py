@@ -334,7 +334,7 @@ class TestUrbanRoutes:
         # Activa checkbox
         routes_page.activate_chekbox()
         # Click en helado
-        routes_page.click_icecream(2)
+        routes_page.click_icecream(2) #cantidad de helados
 
 
     @classmethod
