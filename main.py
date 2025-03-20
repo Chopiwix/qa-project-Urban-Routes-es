@@ -76,10 +76,12 @@ class UrbanRoutesPage:
 
 
 
+
     def __init__(self, driver):
         self.driver = driver
         self.driver.implicitly_wait(10)  # Espera global para evitar errores de carga
 
+# 1 Confirmación del establecimiento de  la ruta
     def set_from(self, from_address):
         """Ingresa la dirección de origen"""
         WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(self.from_field))
@@ -99,7 +101,8 @@ class UrbanRoutesPage:
         """Obtiene el valor del campo 'Hasta'"""
         WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(self.to_field))
         return self.driver.find_element(*self.to_field).get_attribute("value")
-    
+
+# 2 Prueba que verifica que se selecciona la tarifa Comfort   
     def select_comfort_tariff(self):
         """Hace clic en 'Pedir un taxi' y luego selecciona la tarifa Comfort."""
 
@@ -124,6 +127,7 @@ class UrbanRoutesPage:
             EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'tcard active') and .//div[text()='Comfort']]"))
         )
 
+# 3 Prueba para agregar número de teléfono
     def enter_phone_number(self, phone_number):
         """Hace clic en 'Número de teléfono' y lo ingresa en el campo correspondiente."""
 
@@ -180,7 +184,7 @@ class UrbanRoutesPage:
         # Intentar hacer clic con JavaScript
         self.driver.execute_script("arguments[0].click();", sms_confirm_button)
     
-        
+# 4 Prueba que agrega tarjeta de crédito        
     def open_payment_method(self):
         """Hace clic en 'Método de pago' antes de agregar una tarjeta."""
         WebDriverWait(self.driver, 10).until(
@@ -226,7 +230,8 @@ class UrbanRoutesPage:
         # Intentar hacer clic en el botón con JavaScript
         self.driver.execute_script("arguments[0].click();", close_button)
         time.sleep(1)
-        
+
+# 5 Prueba que verifica que se pueda enviar mensaje para el conductor
     def add_driver_message(self, message):
         """Hace clic en el campo de mensaje para el conductor y escribe un texto."""
         # Esperar a que el campo de mensaje sea visible y presente en el DOM
@@ -239,7 +244,7 @@ class UrbanRoutesPage:
         message_input.clear()
         message_input.send_keys(message)
         
-
+# 6 Prueba que verifica que se pueda solicitó una frazada
     def activate_chekbox(self):
         """Activa el checkbox para pedir una manta y pañuelos."""
         checkbox = WebDriverWait(self.driver, 10).until(
@@ -252,6 +257,7 @@ class UrbanRoutesPage:
         # Intentar hacer clic con JavaScript
         self.driver.execute_script("arguments[0].click();", checkbox)
 
+# 7 Prueba que verifica que se añadieron helados
     def click_icecream(self, cantidad):
         """Hace clic en el botón '+' para incrementar la cantidad de Helado la cantidad de veces especificada."""
         for _ in range(cantidad):
@@ -266,7 +272,7 @@ class UrbanRoutesPage:
             self.driver.execute_script("arguments[0].click();", icecream)
             time.sleep(0.5)  # Pausa pequeña para que el clic se procese correctamente
 
-
+# 8 Prueba que verifica la búsqueda de un conductor
     def order_taxi_final(self):
         """Hace clic en el botón de Confirmar taxi final."""
         order_button = WebDriverWait(self.driver, 10).until(
@@ -279,7 +285,7 @@ class UrbanRoutesPage:
         # Intentar hacer clic con JavaScript
         self.driver.execute_script("arguments[0].click();", order_button)
         
-        time.sleep(4)
+
 class TestUrbanRoutes:
 
     driver = None  # Definir el driver a nivel de clase
@@ -306,22 +312,21 @@ class TestUrbanRoutes:
         self.driver.get(data.urban_routes_url)
         routes_page = UrbanRoutesPage(self.driver)
 
-        # 1 Configurar la dirección
+# 1 Configurar la dirección  def test_set_route(self):
         address_from = data.address_from
         address_to = data.address_to
         routes_page.set_from(address_from)
         routes_page.set_to(address_to)
-
         assert routes_page.get_from() == address_from
         assert routes_page.get_to() == address_to
 
-        # Seleccionar tarifa Comfort
+# 2 Seleccionar tarifa Comfort def test_set_comfort(self):
         routes_page.select_comfort_tariff()
+        assert self.driver.find_element(By.XPATH, "//div[contains(@class, 'tcard active') and .//div[text()='Comfort']]").is_displayed(), "Error: La tarifa Comfort no se seleccionó correctamente."
 
-        # Rellenar el número de teléfono
+# 3 Rellenar el número de teléfono def test_set_phone_number(self):
         phone_number = data.phone_number
-        routes_page.enter_phone_number(phone_number)
-        
+        routes_page.enter_phone_number(phone_number) 
         # Obtener el código de confirmación SMS usando el driver actual
         sms_code = retrieve_phone_code(self.driver) 
         # Ingresar el código SMS en el campo correspondiente
@@ -330,26 +335,43 @@ class TestUrbanRoutes:
         # Método de pago para agregar tarjeta
         routes_page.open_payment_method() #Abrir método de pago
         routes_page.click_add_card_button() # Hacer clic en el botón "+" para agregar una nueva tarjeta
+        assert self.driver.find_element(By.ID, "code").get_attribute("value") == sms_code, "Error: El código SMS no se ingresó correctamente."
 
-        # Agregar tarjeta de crédito 
+# 4 Agregar tarjeta de crédito  def test_add_card(self):
         card_number = data.card_number
         card_code = data.card_code
-
         routes_page.click_card(card_number)
         routes_page.add_code_card(card_code)
         routes_page.card_submit_button()
-
         # Cierre de la ventana de tarjeta
         routes_page.close_card_modal()
-        # Escribe el mensaje al conductor
+        assert not self.driver.find_elements(By.XPATH, "//div[contains(@class, 'payment-picker open')]"), "Error: El modal de la tarjeta no se cerró correctamente."
+        
+# 5 Escribe el mensaje al conductor def test_write_message(self):
         routes_page.add_driver_message("Traiga un aperitivo, por favor")
-        # Activa checkbox
+        assert "Traiga un aperitivo, por favor" in self.driver.page_source, "Error: El mensaje al conductor no se ingresó correctamente."
+
+# 6 Activa checkbox de razada def test_blanket(self):
         routes_page.activate_chekbox()
-        # Click en helado
-        routes_page.click_icecream(2) #cantidad de helados
-        # Pedir taxi finalmente
+        time.sleep(1)  # Espera pequeña para asegurarse de que la acción se complete == "true", "Error: El checkbox de frazada no se activó correctamente."
+        # Ahora se captura el checkbox
+        checkbox = self.driver.find_element(By.XPATH, "//div[@class='switch']/input[@type='checkbox' and @class='switch-input']")
+        assert checkbox.is_selected() or checkbox.get_attribute("checked") == "true", "Error: El checkbox de frazada no se activó correctamente."
+
+# 7 click en helado def test_add_icecream(self)
+        initial_icecream_count = int(self.driver.find_element(By.XPATH, "//div[@class='r-group-items']//div[@class='r-counter-container'][.//div[text()='Helado']]//div[@class='counter-value']").text)
+        routes_page.click_icecream(2)  # Aumenta el número de helados
+        time.sleep(1)  # Espera pequeña para asegurar que la acción se registre
+
+        final_icecream_count = int(self.driver.find_element(By.XPATH, "//div[@class='r-group-items']//div[@class='r-counter-container'][.//div[text()='Helado']]//div[@class='counter-value']").text)
+        assert final_icecream_count == initial_icecream_count + 2, "Error: No se agregaron correctamente los helados."
+
+# 8 Pedir taxi finalmente def test_find_driver(self)
         routes_page.order_taxi_final()
-    
+        WebDriverWait(self.driver, 20).until(
+            EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "Buscar automóvil")
+        )
+        assert "Buscar automóvil" in self.driver.page_source, "Error: No se inició correctamente la búsqueda de un conductor."
 
 
     @classmethod
