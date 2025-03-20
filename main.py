@@ -251,6 +251,21 @@ class UrbanRoutesPage:
         self.driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
         # Intentar hacer clic con JavaScript
         self.driver.execute_script("arguments[0].click();", checkbox)
+
+    def click_icecream(self, cantidad):
+        """Hace clic en el botón '+' para incrementar la cantidad de Helado la cantidad de veces especificada."""
+        for _ in range(cantidad):
+            icecream = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//div[@class='r-group-items']//div[@class='r-counter-container'][.//div[text()='Helado']]//div[@class='counter-plus']")
+                )
+            )
+            # Asegurarse de que el botón sea visible en pantalla
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", icecream)
+            # Intentar hacer clic con JavaScript
+            self.driver.execute_script("arguments[0].click();", icecream)
+            time.sleep(0.5)  # Pausa pequeña para que el clic se procese correctamente
+
         time.sleep(4)
 
 class TestUrbanRoutes:
@@ -318,6 +333,9 @@ class TestUrbanRoutes:
         routes_page.add_driver_message("Traiga un aperitivo, por favor")
         # Activa checkbox
         routes_page.activate_chekbox()
+        # Click en helado
+        routes_page.click_icecream(2)
+
 
     @classmethod
     def teardown_class(cls):
