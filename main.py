@@ -241,7 +241,7 @@ class UrbanRoutesPage:
         
 
     def activate_chekbox(self):
-        """Hace clic en el botón de Confirmar después de ingresar el código SMS."""
+        """Activa el checkbox para pedir una manta y pañuelos."""
         checkbox = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located(
                 (By.XPATH, "//div[@class='switch']/input[@type='checkbox' and @class='switch-input']")
@@ -266,8 +266,20 @@ class UrbanRoutesPage:
             self.driver.execute_script("arguments[0].click();", icecream)
             time.sleep(0.5)  # Pausa pequeña para que el clic se procese correctamente
 
-        time.sleep(4)
 
+    def order_taxi_final(self):
+        """Hace clic en el botón de Confirmar taxi final."""
+        order_button = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//button[@type='button' and contains(@class, 'smart-button') and .//span[text()='Pedir un taxi']]")
+            )
+        )
+        # Asegurarse de que el botón sea visible en pantalla
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", order_button)
+        # Intentar hacer clic con JavaScript
+        self.driver.execute_script("arguments[0].click();", order_button)
+        
+        time.sleep(4)
 class TestUrbanRoutes:
 
     driver = None  # Definir el driver a nivel de clase
@@ -335,6 +347,9 @@ class TestUrbanRoutes:
         routes_page.activate_chekbox()
         # Click en helado
         routes_page.click_icecream(2) #cantidad de helados
+        # Pedir taxi finalmente
+        routes_page.order_taxi_final()
+    
 
 
     @classmethod
