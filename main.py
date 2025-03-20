@@ -56,20 +56,23 @@ class UrbanRoutesPage:
 
     # 3.2 Campo del código SMS y botón de cierre
     sms_code_field = (By.ID, "code")  # Campo para ingresar el código SMS
-    close_sms_modal = (By.XPATH, "//button[contains(@class, 'close-button') and contains(@class, 'section-close')]")  #botón de cierre
+
 
     # 4.1 Botón para método de pago
     payment_method_button = (By.XPATH, "//div[contains(@class, 'pp-button') and contains(@class, 'filled')]")
 
     # 4.2 Botón para agregar una tarjeta con el botón +
     add_card_button = (By.CLASS_NAME, "pp-plus-container")
-
     # 4.3 Agregar una tarjeta de crédito
     card_number_field = (By.ID, "number")  # Campo Número de Tarjeta
     cvv_field = (By.NAME, "code")  # Campo CVV # Campo CVV
     confirm_card_button = (By.XPATH, "//button[@type='submit' and text()='Agregar']") #Botón de confirmación en la tarjeta de crédito
 
+    # 4.4 Botón para cerrar ventana de tarjeta
+    close_card_modal_button = (By.XPATH, "//button[contains(@class, 'close-button') and contains(@class, 'section-close')]") #botón de cierre
 
+    # 5 Mensaje para el conductor
+    message_field = (By.XPATH, "//div[@class='input-container']//input[@id='comment']")
 
 
 
@@ -148,20 +151,41 @@ class UrbanRoutesPage:
             EC.presence_of_element_located(self.sms_code_field)
         )
 
-        # 6 Ingresar el código SMS (por ahora, un valor de prueba)
-        self.driver.find_element(*self.sms_code_field).send_keys("1234")
-
-        # 7Esperar a que el botón de cierre sea interactuable
-        close_button = WebDriverWait(self.driver, 10).until(
-        EC.presence_of_element_located(self.close_sms_modal)
+    def enter_sms_code(self, code):
+        """Ingresa el código SMS en el campo correspondiente."""
+        # Esperar hasta que el campo de código esté disponible para ser encontrado
+        sms_input = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@id='code' and @class='input']"))
+        )
+        
+        # Forzar clic en el elemento con JavaScript
+        self.driver.execute_script("arguments[0].click();", sms_input)
+        
+        # Borrar cualquier texto previo en el campo
+        sms_input.clear()
+        
+        # Ingresar el código proporcionado
+        sms_input.send_keys(code)
+        
+        
+    def confirm_sms_code(self):
+        """Hace clic en el botón de Confirmar después de ingresar el código SMS."""
+        sms_confirm_button = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//div[@class='buttons']/button[@type='submit' and text()='Confirmar']")
+            )
         )
 
-        # 8 Forzar el clic con JS ya que puede haber nuevamente errores con elementos superpuestos
-        self.driver.execute_script("arguments[0].click();", close_button)
+        # Asegurarse de que el botón sea visible en pantalla
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", sms_confirm_button)
+        
+        # Intentar hacer clic con JavaScript
+        self.driver.execute_script("arguments[0].click();", sms_confirm_button)
+        
+        # Confirmación de éxito
+        print("Botón de Confirmar presionado exitosamente.")
 
-        # 9 Esperar medio segundo para asegurar que la página procese el cierre
-        time.sleep(0.5)
-
+        
     def open_payment_method(self):
         """Hace clic en 'Método de pago' antes de agregar una tarjeta."""
         WebDriverWait(self.driver, 10).until(
@@ -192,7 +216,7 @@ class UrbanRoutesPage:
         cvv_element.click()
         cvv_element.send_keys(cvv + Keys.TAB)
         print(f"CVV escrito: {cvv}")
-        time.sleep(5)
+        
 
     def card_submit_button(self):
         """Hace clic en el botón 'Agregar' para confirmar la tarjeta."""
@@ -200,8 +224,37 @@ class UrbanRoutesPage:
         # Desempaquetar la tupla con *
         add_button = self.driver.find_element(*self.confirm_card_button)
         add_button.click()
-        print("Tarjeta agregada correctamente")
-        time.sleep(5)
+        
+        
+
+    def close_card_modal(self):
+        """Cierra el modal de la tarjeta de crédito dentro del contenedor de pago."""
+
+        payment_picker = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'payment-picker open')]"))
+        )
+
+        # Buscar el botón de cierre dentro del contenedor activo
+        close_button = payment_picker.find_element(By.XPATH, ".//button[contains(@class, 'close-button') and contains(@class, 'section-close')]")
+
+        # Intentar hacer clic en el botón con JavaScript
+        self.driver.execute_script("arguments[0].click();", close_button)
+        time.sleep(1)
+        
+    def add_driver_message(self, message):
+        """Hace clic en el campo de mensaje para el conductor y escribe un texto."""
+        # Esperar a que el campo de mensaje sea visible y presente en el DOM
+        message_input = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@id='comment' and @class='input']"))
+        )
+
+        # Forzar clic con JavaScript si el clic normal no funciona
+        self.driver.execute_script("arguments[0].click();", message_input)
+
+        # Ingresar el mensaje al conductor
+        message_input.clear()
+        message_input.send_keys(message)
+        time.sleep(4) 
 
 class TestUrbanRoutes:
 
@@ -238,24 +291,34 @@ class TestUrbanRoutes:
         assert routes_page.get_from() == address_from
         assert routes_page.get_to() == address_to
 
-        # 2 Seleccionar tarifa Comfort
+        # Seleccionar tarifa Comfort
         routes_page.select_comfort_tariff()
 
-        # 3 Rellenar el número de teléfono
+        # Rellenar el número de teléfono
         phone_number = data.phone_number
         routes_page.enter_phone_number(phone_number)
-
-        # 4 Método de pago para agregar tarjeta
+        
+        # Obtener el código de confirmación SMS usando el driver actual
+        sms_code = retrieve_phone_code(self.driver) 
+        # Ingresar el código SMS en el campo correspondiente
+        routes_page.enter_sms_code(sms_code)
+        routes_page.confirm_sms_code()
+        # Método de pago para agregar tarjeta
         routes_page.open_payment_method() #Abrir método de pago
         routes_page.click_add_card_button() # Hacer clic en el botón "+" para agregar una nueva tarjeta
 
-        # 4.1 Agregar tarjeta de crédito 
+        # Agregar tarjeta de crédito 
         card_number = data.card_number
         card_code = data.card_code
 
         routes_page.click_card(card_number)
         routes_page.add_code_card(card_code)
         routes_page.card_submit_button()
+
+        # Cierre de la ventana de tarjeta
+        routes_page.close_card_modal()
+        # Escribe el mensaje al conductor
+        routes_page.add_driver_message("Traiga un aperitivo, por favor")
 
     @classmethod
     def teardown_class(cls):
